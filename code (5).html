@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Video Chat with Login, Friends & Calling</title>
+  <style>
+    /* Reset & base */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 5px;
+      font-weight: 700;
+      text-align: center;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      font-size: 2.5rem;
+    }
+    p.subtitle {
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-weight: 300;
+      text-align: center;
+      color: #d5cfff;
+      font-size: 1.2rem;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      padding: 30px;
+      max-width: 480px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    label {
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      user-select: none;
+    }
+    input[type=text], input[type=password] {
+      padding: 12px 15px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      margin-bottom: 20px;
+      background: rgba(255,255,255,0.3);
+      color: #fff;
+      transition: background 0.3s ease;
+    }
+    input[type=text]:focus, input[type=password]:focus {
+      background: rgba(255,255,255,0.5);
+    }
+    button {
+      background: #764ba2;
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 600;
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(118,75,162,0.6);
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+      margin-bottom: 20px;
+    }
+    button:hover {
+      background: #667eea;
+      box-shadow: 0 8px 20px rgba(102,126,234,0.8);
+    }
+    button:disabled {
+      background: #999;
+      box-shadow: none;
+      cursor: default;
+    }
+    .status {
+      font-style: italic;
+      color: #d5cfff;
+      text-align: center;
+      min-height: 24px;
+      margin-bottom: 15px;
+      user-select: none;
+    }
+    .toggle-auth {
+      background: transparent;
+      color: #d5cfff;
+      text-decoration: underline;
+      font-size: 1rem;
+      padding: 0;
+      box-shadow: none;
+      margin-bottom: 0;
+      user-select: none;
+    }
+    .toggle-auth:hover {
+      color: #fff;
+      cursor: pointer;
+    }
+    #logoutBtn {
+      align-self: flex-end;
+      background: #b34747;
+      margin-top: 10px;
+      margin-bottom: 0;
+      box-shadow: 0 5px 15px rgba(179,71,71,0.6);
+    }
+    #logoutBtn:hover {
+      background: #d9534f;
+      box-shadow: 0 8px 20px rgba(217,83,79,0.8);
+    }
+    /* Video chat container with friends panel */
+    #videoChatContainer {
+      display: none;
+      max-width: 900px;
+      width: 100%;
+      flex-direction: row;
+      gap: 30px;
+    }
+    #videoChatMain {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    #friendsPanel {
+      flex: 1;
+      background: rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      max-height: 560px;
+    }
+    #friendsPanel h2 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-weight: 700;
+      font-size: 1.5rem;
+      text-align:center;
+      user-select: none;
+    }
+    #addFriendForm {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    #friendUsernameInput {
+      flex: 1;
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+      background: rgba(255,255,255,0.3);
+      color: #fff;
+      transition: background 0.3s ease;
+    }
+    #friendUsernameInput:focus {
+      background: rgba(255,255,255,0.5);
+    }
+    #addFriendBtn {
+      background: #5a3571;
+      border-radius: 8px;
+      margin-bottom: 0;
+      padding: 10px 18px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(90,53,113,0.8);
+      transition: background 0.3s ease;
+    }
+    #addFriendBtn:hover {
+      background: #764ba2;
+      box-shadow: 0 6px 15px rgba(118,75,162,0.9);
+      cursor: pointer;
+    }
+    #friendsList {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+    #friendsList ul {
+      list-style: none;
+      padding-left: 0;
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+    #friendsList li {
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      transition: background 0.2s ease;
+    }
+    #friendsList li:hover {
+      background: rgba(255,255,255,0.35);
+    }
+    #friendsList li .peer-id {
+      font-size: 0.8rem;
+      color: #ccc;
+      font-weight: 400;
+      max-width: 130px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #friendsList li .callBtn {
+      background: #4d86f7;
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 3px 6px rgba(77,134,247,0.8);
+      border: none;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.3s ease;
+    }
+    #friendsList li .callBtn:hover {
+      background: #2c60de;
+    }
+    /* Responsive for small width */
+    @media (max-width: 900px) {
+      #videoChatContainer {
+        flex-direction: column;
+      }
+      #videoChatMain, #friendsPanel {
+        max-width: 100%;
+        width: 100%;
+      }
+      .videos {
+        flex-direction: column;
+      }
+      video {
+        width: 100% !important;
+      }
+    }
+&nbsp;
+&nbsp;
+
+    /* Videos styling */
+    .videos {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+    video {
+      width: 48%;
+      border-radius: 12px;
+      background: black;
+      object-fit: cover;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <h1>Video Chat with Login & Friends</h1>
+  <p class="subtitle" id="subtitle">Please log in or register to continue.</p>
+&nbsp;
+&nbsp;
+
+  <!-- AUTH CONTAINER -->
+  <div class="container" id="authContainer">
+    <div class="status" id="authStatus"></div>
+    <label for="usernameInput">Username</label>
+    <input type="text" id="usernameInput" autocomplete="username" placeholder="Your username" />
+&nbsp;
+&nbsp;
+
+    <label for="passwordInput">Password</label>
+    <input type="password" id="passwordInput" autocomplete="current-password" placeholder="Your password" />
+&nbsp;
+&nbsp;
+
+    <button id="authBtn">Log In</button>
+    <button class="toggle-auth" id="toggleAuthBtn">Create an account</button>
+  </div>
+&nbsp;
+&nbsp;
+
+  <!-- VIDEO CHAT CONTAINER (hidden initially) -->
+  <div id="videoChatContainer">
+    <div id="videoChatMain" class="container">
+      <button id="logoutBtn" title="Logout">Log Out</button>
+&nbsp;
+&nbsp;
+
+      <label>Your Peer ID:</label>
+      <input type="text" id="yourId" placeholder="Automatically generated" readonly />
+&nbsp;
+&nbsp;
+
+      <label>Connect to Peer ID:</label>
+      <input type="text" id="connectToId" placeholder="Enter peer ID to call" />
+&nbsp;
+&nbsp;
+
+      <button id="callBtn" disabled>Call</button>
+      <button id="hangupBtn" disabled>Hang Up</button>
+&nbsp;
+&nbsp;
+
+      <div class="videos">
+        <video id="localVideo" autoplay muted playsinline></video>
+        <video id="remoteVideo" autoplay playsinline></video>
+      </div>
+&nbsp;
+&nbsp;
+
+      <div class="status" id="status">Initializing...</div>
+    </div>
+&nbsp;
+&nbsp;
+
+    <aside id="friendsPanel">
+      <h2>Friends</h2>
+      <form id="addFriendForm">
+        <input type="text" id="friendUsernameInput" placeholder="Friend's username" autocomplete="off" />
+        <button type="submit" id="addFriendBtn">Add</button>
+      </form>
+      <div id="friendsList">
+        <ul></ul>
+      </div>
+    </aside>
+  </div>
+&nbsp;
+&nbsp;
+
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.4.7/dist/peerjs.min.js"></script>
+  <script>
+    (function() {
+      // Elements
+      const authContainer = document.getElementById('authContainer');
+      const videoChatContainer = document.getElementById('videoChatContainer');
+      const subtitleEl = document.getElementById('subtitle');
+&nbsp;
+&nbsp;
+
+      const authStatusEl = document.getElementById('authStatus');
+      const usernameInput = document.getElementById('usernameInput');
+      const passwordInput = document.getElementById('passwordInput');
+      const authBtn = document.getElementById('authBtn');
+      const toggleAuthBtn = document.getElementById('toggleAuthBtn');
+&nbsp;
+&nbsp;
+
+      const logoutBtn = document.getElementById('logoutBtn');
+&nbsp;
+&nbsp;
+
+      const yourIdInput = document.getElementById('yourId');
+      const connectToIdInput = document.getElementById('connectToId');
+      const callBtn = document.getElementById('callBtn');
+      const hangupBtn = document.getElementById('hangupBtn');
+      const localVideo = document.getElementById('localVideo');
+      const remoteVideo = document.getElementById('remoteVideo');
+      const statusEl = document.getElementById('status');
+&nbsp;
+&nbsp;
+
+      // Friends elements
+      const addFriendForm = document.getElementById('addFriendForm');
+      const friendUsernameInput = document.getElementById('friendUsernameInput');
+      const friendsListEl = document.querySelector('#friendsList ul');
+&nbsp;
+&nbsp;
+
+      // State
+      let isLoginMode = true; // Toggle between login and register
+      let localStream = null;
+      let currentCall = null;
+      let peer = null;
+&nbsp;
+&nbsp;
+
+      // ---------- Authentication Helpers ----------
+&nbsp;
+&nbsp;
+
+      async function hashPassword(password) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+&nbsp;
+&nbsp;
+
+      function getUsers() {
+        const usersJson = localStorage.getItem('vchatUsers');
+        return usersJson ? JSON.parse(usersJson) : {};
+      }
+&nbsp;
+&nbsp;
+
+      function saveUsers(users) {
+        localStorage.setItem('vchatUsers', JSON.stringify(users));
+      }
+&nbsp;
+&nbsp;
+
+      function setLoggedInUser(username) {
+        sessionStorage.setItem('vchatCurrentUser', username);
+      }
+&nbsp;
+&nbsp;
+
+      function getLoggedInUser() {
+        return sessionStorage.getItem('vchatCurrentUser');
+      }
+&nbsp;
+&nbsp;
+
+      function clearLoggedInUser() {
+        sessionStorage.removeItem('vchatCurrentUser');
+      }
+&nbsp;
+&nbsp;
+
+      function setAuthStatus(message, isError = false) {
+        authStatusEl.textContent = message;
+        authStatusEl.style.color = isError ? '#ff6b6b' : '#d5cfff';
+      }
+&nbsp;
+&nbsp;
+
+      function clearAuthInputs() {
+        usernameInput.value = '';
+        passwordInput.value = '';
+      }
+&nbsp;
+&nbsp;
+
+      function toggleAuthMode() {
+        isLoginMode = !isLoginMode;
+        authBtn.textContent = isLoginMode ? 'Log In' : 'Register';
+        toggleAuthBtn.textContent = isLoginMode ? 'Create an account' : 'Have an account? Log In';
+        setAuthStatus('');
+        clearAuthInputs();
+      }
+      toggleAuthBtn.addEventListener('click', toggleAuthMode);
+&nbsp;
+&nbsp;
+
+      // ---------- Friend Helpers ----------
+&nbsp;
+&nbsp;
+
+      // Friends stored in localStorage as "vchatFriends_<username>" = JSON array of usernames
+      function getFriends(username) {
+        const friendsJson = localStorage.getItem(`vchatFriends_${username}`);
+        return friendsJson ? JSON.parse(friendsJson) : [];
+      }
+&nbsp;
+&nbsp;
+
+      function saveFriends(username, friendsArr) {
+        localStorage.setItem(`vchatFriends_${username}`, JSON.stringify(friendsArr));
+      }
+&nbsp;
+&nbsp;
+
+      // Mapping usernames to peer IDs stored in localStorage key "vchatPeerIds" as an object {username: peerId}
+      function getPeerIdsMap() {
+        const mapJson = localStorage.getItem('vchatPeerIds');
+        return mapJson ? JSON.parse(mapJson) : {};
+      }
+      function savePeerIdsMap(map) {
+        localStorage.setItem('vchatPeerIds', JSON.stringify(map));
+      }
+&nbsp;
+&nbsp;
+
+      // Update this user's peer ID in the map to current peer id
+      function updateUserPeerId(username, peerId) {
+        const map = getPeerIdsMap();
+        map[username] = peerId;
+        savePeerIdsMap(map);
+      }
+&nbsp;
+&nbsp;
+
+      // ---------- Authentication Actions ----------
+      authBtn.addEventListener('click', async () => {
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+        if (!username || !password) {
+          setAuthStatus('Please enter username and password.', true);
+          return;
+        }
+        const users = getUsers();
+&nbsp;
+&nbsp;
+
+        if (isLoginMode) {
+          // Log in flow
+          if (!(username in users)) {
+            setAuthStatus('User does not exist. Please register first.', true);
+            return;
+          }
+          const hashedInput = await hashPassword(password);
+          if (users[username] !== hashedInput) {
+            setAuthStatus('Incorrect password.', true);
+            return;
+          }
+          // Success login
+          setLoggedInUser(username);
+          setAuthStatus('');
+          startVideoChatUI();
+        } else {
+          // Register flow
+          if (username in users) {
+            setAuthStatus('Username already taken. Choose a different one.', true);
+            return;
+          }
+          const hashedPass = await hashPassword(password);
+          users[username] = hashedPass;
+          saveUsers(users);
+          setLoggedInUser(username);
+          setAuthStatus('');
+          startVideoChatUI();
+        }
+      });
+&nbsp;
+&nbsp;
+
+      // ---------- Start Video Chat UI After Login ----------
+      function startVideoChatUI() {
+        authContainer.style.display = 'none';
+        videoChatContainer.style.display = 'flex';
+        subtitleEl.textContent = `Welcome, ${getLoggedInUser()}! Your secure video chat is ready.`;
+        setupPeerAndMedia();
+        renderFriendsList();
+      }
+&nbsp;
+&nbsp;
+
+      // ---------- Logout ----------
+      logoutBtn.addEventListener('click', () => {
+        clearLoggedInUser();
+        if(currentCall) {
+          currentCall.close();
+          currentCall = null;
+        }
+        if(peer) {
+          peer.destroy();
+          peer = null;
+        }
+        if(localStream) {
+          localStream.getTracks().forEach(track => track.stop());
+          localStream = null;
+        }
+        remoteVideo.srcObject = null;
+        localVideo.srcObject = null;
+        yourIdInput.value = '';
+        connectToIdInput.value = '';
+        callBtn.disabled = true;
+        hangupBtn.disabled = true;
+        authContainer.style.display = 'flex';
+        videoChatContainer.style.display = 'none';
+        subtitleEl.textContent = 'Please log in or register to continue.';
+        setAuthStatus('');
+        clearAuthInputs();
+      });
+&nbsp;
+&nbsp;
+
+      // ---------- PeerJS & Media Setup ----------
+      async function setupPeerAndMedia() {
+        callBtn.disabled = true;
+        hangupBtn.disabled = true;
+        statusEl.textContent = 'Initializing...';
+&nbsp;
+&nbsp;
+
+        try {
+          // Get local media stream
+          localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          localVideo.srcObject = localStream;
+&nbsp;
+&nbsp;
+
+          // Create new peer instance with random id
+          peer = new Peer({ debug: 2 });
+&nbsp;
+&nbsp;
+
+          peer.on('open', id => {
+            yourIdInput.value = id;
+            statusEl.textContent = 'Ready. Enter a peer ID to call or wait for calls.';
+            callBtn.disabled = false;
+            // update the username -> peerId map
+            updateUserPeerId(getLoggedInUser(), id);
+            renderFriendsList();
+          });
+&nbsp;
+&nbsp;
+
+          peer.on('error', err => {
+            console.error(err);
+            statusEl.textContent = 'Error: ' + err;
+          });
+&nbsp;
+&nbsp;
+
+          peer.on('call', call => {
+            if (currentCall) {
+              call.close();
+              return;
+            }
+            statusEl.textContent = 'Receiving call from ' + call.peer;
+            currentCall = call;
+            call.answer(localStream);
+            setupCallEvents(call);
+          });
+&nbsp;
+&nbsp;
+
+          // Call button
+          callBtn.addEventListener('click', () => {
+            const remoteId = connectToIdInput.value.trim();
+            if (!remoteId) {
+              alert('Please enter a peer ID to call.');
+              return;
+            }
+            if (currentCall) {
+              alert('Already in a call. Hang up first.');
+              return;
+            }
+            statusEl.textContent = 'Calling ' + remoteId + '...';
+            const call = peer.call(remoteId, localStream);
+            if (!call) {
+              statusEl.textContent = 'Failed to place call.';
+              return;
+            }
+            currentCall = call;
+            setupCallEvents(call);
+          });
+&nbsp;
+&nbsp;
+
+          // Hangup button
+          hangupBtn.addEventListener('click', () => {
+            if (currentCall) {
+              currentCall.close();
+              currentCall = null;
+            }
+            statusEl.textContent = 'Call ended.';
+            remoteVideo.srcObject = null;
+            hangupBtn.disabled = true;
+            callBtn.disabled = false;
+          });
+&nbsp;
+&nbsp;
+
+        } catch (err) {
+          console.error('Failed to initialize media or peer:', err);
+          statusEl.textContent = 'Error initializing video chat: ' + err.message;
+          callBtn.disabled = true;
+        }
+      }
+&nbsp;
+&nbsp;
+
+      // Setup call events
+      function setupCallEvents(call) {
+        call.on('stream', remoteStream => {
+          remoteVideo.srcObject = remoteStream;
+          statusEl.textContent = 'In call with ' + call.peer;
+          hangupBtn.disabled = false;
+          callBtn.disabled = true;
+        });
+        call.on('close', () => {
+          statusEl.textContent = 'Call ended.';
+          remoteVideo.srcObject = null;
+          currentCall = null;
+          callBtn.disabled = false;
+          hangupBtn.disabled = true;
+        });
+        call.on('error', err => {
+          console.error('Call error', err);
+          statusEl.textContent = 'Call error: ' + err;
+          currentCall = null;
+          remoteVideo.srcObject = null;
+          callBtn.disabled = false;
+          hangupBtn.disabled = true;
+        });
+      }
+&nbsp;
+&nbsp;
+
+      // ---------- Friends Management ----------
+&nbsp;
+&nbsp;
+
+      // Render friends list UI
+      function renderFriendsList() {
+        const username = getLoggedInUser();
+        if (!username) return;
+&nbsp;
+&nbsp;
+
+        const friends = getFriends(username);
+        const map = getPeerIdsMap();
+&nbsp;
+&nbsp;
+
+        friendsListEl.innerHTML = '';
+        if (friends.length === 0) {
+          friendsListEl.innerHTML = '<li><em>No friends added yet.</em></li>';
+          return;
+        }
+&nbsp;
+&nbsp;
+
+        friends.forEach(friend => {
+          const li = document.createElement('li');
+&nbsp;
+&nbsp;
+
+          const friendNameSpan = document.createElement('span');
+          friendNameSpan.textContent = friend;
+&nbsp;
+&nbsp;
+
+          // Peer ID for this friend known from map?
+          const friendPeerId = map[friend] || null;
+          const peerIdSpan = document.createElement('span');
+          peerIdSpan.className = 'peer-id';
+          peerIdSpan.textContent = friendPeerId ? `ID: ${friendPeerId}` : '(Offline)';
+&nbsp;
+&nbsp;
+
+          // Call button
+          const callBtnFriend = document.createElement('button');
+          callBtnFriend.textContent = 'Call';
+          callBtnFriend.className = 'callBtn';
+          callBtnFriend.disabled = !friendPeerId;
+          callBtnFriend.title = friendPeerId ? `Call ${friend}` : 'Friend offline or no peer ID';
+          callBtnFriend.addEventListener('click', e => {
+            e.stopPropagation();
+            if (friendPeerId) {
+              connectToIdInput.value = friendPeerId;
+              callBtn.click();
+            }
+          });
+&nbsp;
+&nbsp;
+
+          li.appendChild(friendNameSpan);
+          li.appendChild(peerIdSpan);
+          li.appendChild(callBtnFriend);
+&nbsp;
+&nbsp;
+
+          // Clicking friend name autofills peer ID if available
+          li.addEventListener('click', () => {
+            if (friendPeerId) {
+              connectToIdInput.value = friendPeerId;
+              statusEl.textContent = `Ready to call ${friend}`;
+              connectToIdInput.focus();
+            }
+          });
+&nbsp;
+&nbsp;
+
+          friendsListEl.appendChild(li);
+        });
+      }
+&nbsp;
+&nbsp;
+
+      // Add friend form submission
+      addFriendForm.addEventListener('submit', e => {
+        e.preventDefault();
+        const friendToAdd = friendUsernameInput.value.trim();
+        const currentUser = getLoggedInUser();
+        if (!friendToAdd) {
+          alert('Enter a username to add as friend.');
+          return;
+        }
+        if (friendToAdd === currentUser) {
+          alert('You cannot add yourself as a friend.');
+          return;
+        }
+        const users = getUsers();
+        if (!(friendToAdd in users)) {
+          alert('User "' + friendToAdd + '" does not exist.');
+          return;
+        }
+        const friends = getFriends(currentUser);
+        if (friends.includes(friendToAdd)) {
+          alert('User "' + friendToAdd + '" is already your friend.');
+          return;
+        }
+        friends.push(friendToAdd);
+        saveFriends(currentUser, friends);
+        friendUsernameInput.value = '';
+        renderFriendsList();
+      });
+&nbsp;
+&nbsp;
+
+      // ---------- On page load, check if already logged in ----------
+      window.addEventListener('load', () => {
+        const loggedInUser = getLoggedInUser();
+        if (loggedInUser) {
+          startVideoChatUI();
+        } else {
+          authContainer.style.display = 'flex';
+          videoChatContainer.style.display = 'none';
+          subtitleEl.textContent = 'Please log in or register to continue.';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
+&nbsp;
+&nbsp;
